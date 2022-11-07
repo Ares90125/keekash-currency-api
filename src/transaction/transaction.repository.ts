@@ -41,19 +41,19 @@ export class TransactionRepository extends Repository<Transaction> {
   }
 
   async getBalanceAll(userId: number) {
-    const res = await this.createQueryBuilder('balance')
-      .where({ userId })
-      .select(['id', 'currency_id', 'SUM(amount)'])
-      // // .groupBy('balance.id')
-      // .addGroupBy('balance.currency_id')
-      .getQuery();
-    // .getRawMany();
+    const res = await this.createQueryBuilder('transaction')
+      .innerJoinAndSelect('transaction.currency', 'currency')
+      .select(['currency.name', 'SUM(transaction.amount)', 'currency.symbol'])
+      .where(`transaction.user_id = ${userId}`)
+      .groupBy('currency.id')
+      .getRawMany();
 
     return res;
   }
 
   async getBalanceByCurrency(userId: number, currencyId: number): Promise<number> {
     const { sum } = await this.createQueryBuilder('transaction')
+      .innerJoinAndSelect('transaction.currency', 'currency')
       .select('SUM(amount)', 'sum')
       .where({ userId, currencyId })
       .getRawOne();
