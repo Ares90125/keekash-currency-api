@@ -52,13 +52,14 @@ export class TransactionRepository extends Repository<Transaction> {
   }
 
   async getBalanceByCurrency(userId: number, currencyId: number): Promise<number> {
-    const { sum } = await this.createQueryBuilder('transaction')
+    const sum = await this.createQueryBuilder('transaction')
       .innerJoinAndSelect('transaction.currency', 'currency')
-      .select('SUM(amount)', 'sum')
-      .where({ userId, currencyId })
-      .getRawOne();
+      .select(['currency.name', 'SUM(transaction.amount)', 'currency.symbol'])
+      .where(`transaction.user_id = ${userId} And transaction.currency_id = ${currencyId}`)
+      .groupBy('currency.id')
+      .getRawOne()
 
-    return Number(sum);
+    return sum;
   }
 
   async convertCurrency(
